@@ -114,23 +114,23 @@ export default class StartScene extends Phaser.Scene {
       this.textures.remove('gradientBg');
     }
     
-    // Create gradient from red (top-left) to blue (bottom-right) using a canvas texture
+    // Create canvas for background
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     
-    // Create linear gradient from top-left to bottom-right
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, 'rgb(220, 53, 69)');  // Red at top-left
-    gradient.addColorStop(1, 'rgb(0, 123, 255)');  // Blue at bottom-right
+    // First, draw diamond pattern covering the background
+    this.drawDiamondPattern(ctx, width, height);
     
-    // Fill canvas with gradient
+    // Then, overlay gradient from red (top-left) to blue (bottom-right)
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, 'rgba(220, 53, 69, 0.7)');  // Red at top-left with transparency
+    gradient.addColorStop(1, 'rgba(0, 123, 255, 0.7)');  // Blue at bottom-right with transparency
+    
+    // Apply gradient overlay
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
-    
-    // Add diamond shapes to canvas
-    this.drawDiamondsOnCanvas(ctx, width, height);
     
     // Create Phaser texture from canvas
     this.textures.addCanvas('gradientBg', canvas);
@@ -142,61 +142,88 @@ export default class StartScene extends Phaser.Scene {
     bg.setDepth(-100);
   }
 
-  drawDiamondsOnCanvas(ctx, width, height) {
-    // Add decorative diamond shapes across the background
-    const diamondCount = 30;
-    const diamondSize = Math.min(width, height) / 15;
+  drawDiamondPattern(ctx, width, height) {
+    // Create a tiled diamond pattern covering the entire background
+    const diamondSize = 75; // Increased size for bigger diamonds
+    const spacing = diamondSize * 0.75; // Spacing between diamond centers
     
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 2;
+    // Calculate how many diamonds we need with extra padding to ensure full coverage
+    // Add extra rows/cols to cover edges and beyond
+    const cols = Math.ceil(width / spacing) + 3;
+    const rows = Math.ceil(height / spacing) + 4;
     
-    for (let i = 0; i < diamondCount; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      const size = diamondSize * (0.5 + Math.random() * 0.5);
-      const rotation = Math.random() * Math.PI * 2;
-      
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rotation);
-      
-      // Draw diamond shape (rotated square)
-      ctx.beginPath();
-      ctx.moveTo(-size / 2, 0);      // left
-      ctx.lineTo(0, -size / 2);      // top
-      ctx.lineTo(size / 2, 0);       // right
-      ctx.lineTo(0, size / 2);       // bottom
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
+    // Base colors for diamonds (lighter colors so gradient shows through)
+    const colors = [
+      'rgba(255, 255, 255, 0.3)',
+      'rgba(240, 240, 255, 0.25)',
+      'rgba(255, 240, 240, 0.25)',
+      'rgba(240, 255, 240, 0.2)'
+    ];
+    
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    
+    // Draw diamonds in a grid pattern
+    // Start from negative position to ensure top-left coverage
+    const startOffset = -spacing * 1.5;
+    
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // Offset every other row for diamond pattern
+        const offsetX = (row % 2 === 0) ? 0 : spacing / 2;
+        const x = startOffset + col * spacing + offsetX;
+        // Use vertical spacing that accounts for diamond height
+        const y = startOffset + row * spacing;
+        
+        // Alternate colors for visual interest
+        const colorIndex = (row + col) % colors.length;
+        ctx.fillStyle = colors[colorIndex];
+        
+        // Draw diamond (rotated square)
+        ctx.save();
+        ctx.translate(x, y);
+        
+        ctx.beginPath();
+        ctx.moveTo(0, -diamondSize / 2);      // top
+        ctx.lineTo(diamondSize / 2, 0);       // right
+        ctx.lineTo(0, diamondSize / 2);       // bottom
+        ctx.lineTo(-diamondSize / 2, 0);      // left
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
     }
     
-    // Add some smaller diamonds
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1;
+    // Add some smaller accent diamonds
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 0.5;
     
-    for (let i = 0; i < diamondCount * 2; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      const size = diamondSize * 0.3 * (0.5 + Math.random());
-      const rotation = Math.random() * Math.PI * 2;
-      
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rotation);
-      
-      ctx.beginPath();
-      ctx.moveTo(-size / 2, 0);
-      ctx.lineTo(0, -size / 2);
-      ctx.lineTo(size / 2, 0);
-      ctx.lineTo(0, size / 2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
+    const accentSize = diamondSize * 0.45;
+    const accentSpacing = spacing * 0.6;
+    const accentRows = Math.ceil(height / accentSpacing) + 4;
+    const accentCols = Math.ceil(width / accentSpacing) + 4;
+    
+    for (let row = 0; row < accentRows; row++) {
+      for (let col = 0; col < accentCols; col++) {
+        const offsetX = (row % 2 === 0) ? 0 : accentSpacing / 2;
+        const x = startOffset + col * accentSpacing + offsetX;
+        const y = startOffset + row * accentSpacing;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        
+        ctx.beginPath();
+        ctx.moveTo(0, -accentSize / 2);
+        ctx.lineTo(accentSize / 2, 0);
+        ctx.lineTo(0, accentSize / 2);
+        ctx.lineTo(-accentSize / 2, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
     }
   }
 
@@ -213,8 +240,9 @@ export default class StartScene extends Phaser.Scene {
     this.createCardLayer(width, height, 1.5, 0.7); // Fastest layer (foreground)
     
     // Game Title - responsive font size with playful font
-    const titleSize = Math.min(width * 0.12, 120);
-    const title = this.add.text(width / 2, height / 3, 'Qalam', {
+    const isMobile = width < 768;
+    const titleSize = isMobile ? Math.min(width * 0.15, 80) : Math.min(width * 0.12, 120);
+    const title = this.add.text(width / 2, isMobile ? height / 4 : height / 3, 'Qalam', {
       fontSize: `${titleSize}px`,
       fontFamily: '"Comic Neue", cursive',
       color: '#ffffff',
@@ -233,10 +261,10 @@ export default class StartScene extends Phaser.Scene {
     title.setDepth(2000); // Bring title to the very front, above everything else
     
     // Start Game Button - responsive size
-    const buttonWidth = Math.min(width * 0.25, 250);
-    const buttonHeight = Math.min(height * 0.08, 70);
+    const buttonWidth = isMobile ? Math.min(width * 0.4, 200) : Math.min(width * 0.25, 250);
+    const buttonHeight = isMobile ? Math.min(height * 0.1, 60) : Math.min(height * 0.08, 70);
     const buttonX = width / 2;
-    const buttonY = height / 2 + Math.min(height * 0.15, 120);
+    const buttonY = isMobile ? height / 2 + height * 0.1 : height / 2 + Math.min(height * 0.15, 120);
     
     // Store button properties for scaling
     this.buttonWidth = buttonWidth;
@@ -255,7 +283,7 @@ export default class StartScene extends Phaser.Scene {
     buttonBg.strokeRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, 10);
     
     // Button text - responsive font size with playful font
-    const buttonFontSize = Math.min(width * 0.035, 32);
+    const buttonFontSize = isMobile ? Math.min(width * 0.045, 28) : Math.min(width * 0.035, 32);
     const buttonText = this.add.text(0, 0, 'Start Game', {
       fontSize: `${buttonFontSize}px`,
       fontFamily: '"Comic Neue", cursive',
@@ -323,7 +351,7 @@ export default class StartScene extends Phaser.Scene {
     });
     
     buttonBg.on('pointerdown', () => {
-      this.scene.start('GameScene');
+      this.scene.start('ModeSelectScene');
     });
   }
 

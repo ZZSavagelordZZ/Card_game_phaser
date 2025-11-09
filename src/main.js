@@ -1,15 +1,27 @@
 import Phaser from 'phaser';
 import StartScene from './scenes/StartScene.js';
+import ModeSelectScene from './scenes/ModeSelectScene.js';
 import GameScene from './scenes/GameScene.js';
+
+// Force landscape on mobile
+const isMobile = window.innerWidth < 768 || window.innerHeight < 768;
+let gameWidth = window.innerWidth;
+let gameHeight = window.innerHeight;
+
+if (isMobile && gameHeight > gameWidth) {
+  // Swap dimensions for landscape
+  [gameWidth, gameHeight] = [gameHeight, gameWidth];
+}
 
 const config = {
   type: Phaser.AUTO,
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: gameWidth,
+  height: gameHeight,
   backgroundColor: '#000000',
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    orientation: Phaser.Scale.Orientation.LANDSCAPE,
   },
   physics: {
     default: 'arcade',
@@ -18,7 +30,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [StartScene, GameScene],
+  scene: [StartScene, ModeSelectScene, GameScene],
 };
 
 // Create game instance

@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ILM - Card Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Qalam - Card Game</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
@@ -17,12 +21,41 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         canvas {
             display: block;
+            touch-action: none;
         }
     </style>
     <script type="module" src="/src/main.js"></script>
+    <script>
+        // Lock orientation to landscape on mobile
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {
+                // Lock failed, continue anyway
+            });
+        } else if (screen.lockOrientation) {
+            screen.lockOrientation('landscape');
+        } else if (screen.mozLockOrientation) {
+            screen.mozLockOrientation('landscape');
+        } else if (screen.msLockOrientation) {
+            screen.msLockOrientation('landscape');
+        }
+        
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
 </head>
 <body>
 </body>
