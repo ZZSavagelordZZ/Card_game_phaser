@@ -1,0 +1,24 @@
+{
+  "name": "phaser-card-game",
+  "version": "1.0.0",
+  "description": "A web card game built with Phaser.",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "vite": "^4.0.0"
+  },
+  "keywords": [
+    "phaser",
+    "card game",
+    "web game"
+  ],
+  "author": "",
+  "license": "MIT"
+}
