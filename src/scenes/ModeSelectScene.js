@@ -1,3 +1,5 @@
+import { createGradientBackground, ensureUnifiedCardBack, ensureUnifiedCardFront, lightenColor as utilLightenColor } from '../utils/ui.js';
+
 export default class ModeSelectScene extends Phaser.Scene {
   constructor() {
     super({ key: 'ModeSelectScene' });
@@ -5,54 +7,11 @@ export default class ModeSelectScene extends Phaser.Scene {
   }
 
   preload() {
-    // Create colorful card back textures with white borders (same as StartScene)
-    const cardColors = [
-      0xff6b6b, // Coral red
-      0x4ecdc4, // Turquoise
-      0x45b7d1, // Sky blue
-      0xffa07a, // Light salmon
-      0x98d8c8, // Mint green
-      0xf7dc6f, // Yellow
-      0xbb8fce, // Purple
-      0x85c1e2, // Light blue
-      0xf1948a, // Pink
-      0x52be80, // Green
-      0xf39c12, // Orange
-      0xe74c3c, // Red
-    ];
-    
-    // Create multiple card back variants
-    for (let i = 0; i < 12; i++) {
-      this.createCardBackTexture(`cardBack${i}`, cardColors[i % cardColors.length]);
+    // Ensure unified card backs exist
+    const colors = [0x4ecdc4, 0xff6b6b, 0x45b7d1, 0xf7dc6f, 0xbb8fce, 0x52be80];
+    for (let i = 0; i < colors.length; i++) {
+      ensureUnifiedCardBack(this, `cardBack${i}`, colors[i]);
     }
-  }
-
-  createCardBackTexture(key, bgColor) {
-    const cardGraphics = this.add.graphics();
-    const cardWidth = 60;
-    const cardHeight = 90;
-    const borderWidth = 4;
-    const cornerRadius = 5;
-    
-    // White border (outer border)
-    cardGraphics.fillStyle(0xffffff, 1);
-    cardGraphics.fillRoundedRect(0, 0, cardWidth, cardHeight, cornerRadius);
-    
-    // Colorful card back (inner area)
-    cardGraphics.fillStyle(bgColor, 1);
-    cardGraphics.fillRoundedRect(
-      borderWidth, 
-      borderWidth, 
-      cardWidth - borderWidth * 2, 
-      cardHeight - borderWidth * 2, 
-      cornerRadius - 1
-    );
-    
-    // Add decorative pattern elements
-    this.addCardBackPattern(cardGraphics, cardWidth, cardHeight, bgColor);
-    
-    cardGraphics.generateTexture(key, cardWidth, cardHeight);
-    cardGraphics.destroy();
   }
 
   addCardBackPattern(graphics, width, height, baseColor) {
@@ -110,7 +69,11 @@ export default class ModeSelectScene extends Phaser.Scene {
     const { width, height } = this.scale;
     
     // Create gradient background with diamond pattern
-    this.createGradientBackground(width, height);
+    const bgKey = createGradientBackground(this, 'gradientBgMode', width, height);
+    this.bg = this.add.image(0, 0, bgKey);
+    this.bg.setOrigin(0, 0);
+    this.bg.setDisplaySize(width, height);
+    this.bg.setDepth(-100);
     
     // Add background card parallax layers (only the slower, further away ones)
     this.createCardLayer(width, height, 0.5, 0.2); // Slowest layer (background)
@@ -151,147 +114,23 @@ export default class ModeSelectScene extends Phaser.Scene {
     const rightCardX = centerX + totalWidth / 2 - cardWidth / 2;
     
     // Maths card
-    const mathsCard = this.createModeCard(
-      leftCardX,
-      centerY,
-      cardWidth,
-      cardHeight,
-      'Maths',
-      0x4ecdc4 // Turquoise
-    );
+    const mathsCard = this.createModeCard(leftCardX, centerY, cardWidth, cardHeight, 'Maths', 0x4ecdc4);
     
-    // General Knowledge card
-    const gkCard = this.createModeCard(
-      rightCardX,
-      centerY,
-      cardWidth,
-      cardHeight,
-      'General Knowledge',
-      0xff6b6b // Coral red
-    );
+    // Synonym Game card
+    const gkCard = this.createModeCard(rightCardX, centerY, cardWidth, cardHeight, 'Synonym Game', 0xff6b6b);
     
     // Make cards interactive
     this.makeCardInteractive(mathsCard, 'maths');
     this.makeCardInteractive(gkCard, 'general');
-  }
-
-  createGradientBackground(width, height) {
-    // Remove texture if it already exists
-    if (this.textures.exists('gradientBgMode')) {
-      this.textures.remove('gradientBgMode');
-    }
-    
-    // Create canvas for background
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    
-    // First, draw diamond pattern covering the background
-    this.drawDiamondPattern(ctx, width, height);
-    
-    // Then, overlay gradient from red (top-left) to blue (bottom-right)
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, 'rgba(220, 53, 69, 0.7)');  // Red at top-left with transparency
-    gradient.addColorStop(1, 'rgba(0, 123, 255, 0.7)');  // Blue at bottom-right with transparency
-    
-    // Apply gradient overlay
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-    
-    // Create Phaser texture from canvas
-    this.textures.addCanvas('gradientBgMode', canvas);
-    
-    // Add background image
-    const bg = this.add.image(0, 0, 'gradientBgMode');
-    bg.setOrigin(0, 0);
-    bg.setDisplaySize(width, height);
-    bg.setDepth(-100);
-  }
-
-  drawDiamondPattern(ctx, width, height) {
-    // Create a tiled diamond pattern covering the entire background
-    const diamondSize = 75; // Increased size for bigger diamonds
-    const spacing = diamondSize * 0.75; // Spacing between diamond centers
-    
-    // Calculate how many diamonds we need with extra padding to ensure full coverage
-    // Add extra rows/cols to cover edges and beyond
-    const cols = Math.ceil(width / spacing) + 3;
-    const rows = Math.ceil(height / spacing) + 4;
-    
-    // Base colors for diamonds (lighter colors so gradient shows through)
-    const colors = [
-      'rgba(255, 255, 255, 0.3)',
-      'rgba(240, 240, 255, 0.25)',
-      'rgba(255, 240, 240, 0.25)',
-      'rgba(240, 255, 240, 0.2)'
-    ];
-    
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    
-    // Draw diamonds in a grid pattern
-    // Start from negative position to ensure top-left coverage
-    const startOffset = -spacing * 1.5;
-    
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        // Offset every other row for diamond pattern
-        const offsetX = (row % 2 === 0) ? 0 : spacing / 2;
-        const x = startOffset + col * spacing + offsetX;
-        // Use vertical spacing that accounts for diamond height
-        const y = startOffset + row * spacing;
-        
-        // Alternate colors for visual interest
-        const colorIndex = (row + col) % colors.length;
-        ctx.fillStyle = colors[colorIndex];
-        
-        // Draw diamond (rotated square)
-        ctx.save();
-        ctx.translate(x, y);
-        
-        ctx.beginPath();
-        ctx.moveTo(0, -diamondSize / 2);      // top
-        ctx.lineTo(diamondSize / 2, 0);       // right
-        ctx.lineTo(0, diamondSize / 2);       // bottom
-        ctx.lineTo(-diamondSize / 2, 0);      // left
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
+    // Handle mobile browser UI resize to keep background covering the screen
+    this.scale.on('resize', (gameSize) => {
+      const { width: w, height: h } = gameSize;
+      const key = createGradientBackground(this, 'gradientBgMode', w, h);
+      if (this.bg) {
+        this.bg.setTexture(key);
+        this.bg.setDisplaySize(w, h);
       }
-    }
-    
-    // Add some smaller accent diamonds
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 0.5;
-    
-    const accentSize = diamondSize * 0.45;
-    const accentSpacing = spacing * 0.6;
-    const accentRows = Math.ceil(height / accentSpacing) + 4;
-    const accentCols = Math.ceil(width / accentSpacing) + 4;
-    
-    for (let row = 0; row < accentRows; row++) {
-      for (let col = 0; col < accentCols; col++) {
-        const offsetX = (row % 2 === 0) ? 0 : accentSpacing / 2;
-        const x = startOffset + col * accentSpacing + offsetX;
-        const y = startOffset + row * accentSpacing;
-        
-        ctx.save();
-        ctx.translate(x, y);
-        
-        ctx.beginPath();
-        ctx.moveTo(0, -accentSize / 2);
-        ctx.lineTo(accentSize / 2, 0);
-        ctx.lineTo(0, accentSize / 2);
-        ctx.lineTo(-accentSize / 2, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
+    });
   }
 
   createCardLayer(width, height, speed, alpha) {
@@ -348,30 +187,22 @@ export default class ModeSelectScene extends Phaser.Scene {
     const cardContainer = this.add.container(x, y);
     
     // Card background with white border (back of card - no text initially)
-    const cardBg = this.add.graphics();
     const borderWidth = 6;
     const cornerRadius = 15;
-    
-    // White border (outer)
-    cardBg.fillStyle(0xffffff, 1);
-    cardBg.fillRoundedRect(-width / 2, -height / 2, width, height, cornerRadius);
-    
-    // Colored card back (inner)
-    cardBg.fillStyle(color, 1);
-    cardBg.fillRoundedRect(
-      -width / 2 + borderWidth,
-      -height / 2 + borderWidth,
-      width - borderWidth * 2,
-      height - borderWidth * 2,
-      cornerRadius - 2
-    );
-    
-    // Add decorative pattern
-    this.addCardPattern(cardBg, width, height, color);
+    const cardBackKey = ensureUnifiedCardBack(this, `mode_card_back_${color}`, color);
+    const cardBg = this.add.image(0, 0, cardBackKey);
+    cardBg.setDisplaySize(width, height);
+    // Add soft shadow
+    const shadow = this.add.image(6, 8, cardBackKey);
+    shadow.setTint(0x000000);
+    shadow.setAlpha(0.25);
+    shadow.setDisplaySize(width, height);
+    shadow.setDepth(-1);
     
     // Card label text (hidden initially, shown on flip)
-    const isMobile = width < 768;
-    const fontSize = isMobile ? Math.min(width * 0.06, 28) : Math.min(width * 0.08, 40);
+    const isMobile = this.scale.width < 768;
+    // Scale text relative to card size for legibility on mobile
+    const fontSize = isMobile ? Math.min(height * 0.18, 40) : Math.min(height * 0.16, 44);
     const cardText = this.add.text(0, 0, label, {
       fontSize: `${fontSize}px`,
       fontFamily: '"Comic Neue", cursive',
@@ -394,20 +225,18 @@ export default class ModeSelectScene extends Phaser.Scene {
     cardText.setVisible(false); // Hidden initially
     cardText.setAlpha(0); // Start with 0 alpha for smooth transition
     
-    // Make card background interactive directly (like start game button)
-    cardBg.setInteractive(
-      new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
-      Phaser.Geom.Rectangle.Contains
-    );
-    cardBg.input.cursor = 'pointer';
+    // Use a dedicated interactive zone to avoid hit-area bugs with scaled images
+    const hitZone = this.add.zone(0, 0, width, height);
+    hitZone.setInteractive({ cursor: 'pointer' });
     
     // Add elements to container
-    cardContainer.add([cardBg, cardText]);
-    cardContainer.setDepth(500);
+    cardContainer.add([shadow, cardBg, cardText, hitZone]);
+    cardContainer.setDepth(1500);
     
     // Store references
     cardContainer.cardBg = cardBg;
     cardContainer.cardText = cardText;
+    cardContainer.hitZone = hitZone;
     cardContainer.originalWidth = width;
     cardContainer.originalHeight = height;
     cardContainer.borderWidth = borderWidth;
@@ -457,181 +286,63 @@ export default class ModeSelectScene extends Phaser.Scene {
   makeCardInteractive(cardContainer, mode) {
     const { width } = this.scale;
     const isMobile = width < 768;
-    const { cardBg, cardText, originalWidth, originalHeight, borderWidth, cornerRadius, color } = cardContainer;
+    const { cardBg, cardText, hitZone, originalWidth, originalHeight, borderWidth, cornerRadius, color } = cardContainer;
     
-    if (isMobile) {
-      // Mobile: First click flips, second click launches
-      cardBg.on('pointerdown', () => {
-        if (!cardContainer.isFlipped) {
-          // First click: Flip card
-          cardContainer.isFlipped = true;
-          
-          // Flip animation: scale X to 0 then back to 1
-          this.tweens.add({
-            targets: cardContainer,
-            scaleX: 0,
-            duration: 150,
-            ease: 'Power2',
-            onComplete: () => {
-              // Show text and brighten card
-              cardText.setVisible(true);
-              const brighterColor = this.lightenColor(color, 0.2);
-              
-              cardBg.clear();
-              cardBg.fillStyle(0xffffff, 1);
-              cardBg.fillRoundedRect(-originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight, cornerRadius);
-              cardBg.fillStyle(brighterColor, 1);
-              cardBg.fillRoundedRect(
-                -originalWidth / 2 + borderWidth,
-                -originalHeight / 2 + borderWidth,
-                originalWidth - borderWidth * 2,
-                originalHeight - borderWidth * 2,
-                cornerRadius - 2
-              );
-              this.addCardPattern(cardBg, originalWidth, originalHeight, brighterColor);
-              
-              // Fade in text
-              this.tweens.add({
-                targets: cardText,
-                alpha: 1,
-                duration: 100
-              });
-              
-              // Scale back up with text visible
-              this.tweens.add({
-                targets: cardContainer,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150,
-                ease: 'Back.easeOut'
-              });
-            }
-          });
-        } else {
-          // Second click: Launch game mode
-          this.registry.set('selectedMode', mode);
-          this.scene.start('GameScene');
-        }
+    const flipIn = () => {
+      return new Promise((resolve) => {
+        this.tweens.add({
+          targets: cardContainer,
+          scaleX: 0,
+          duration: 150,
+          ease: 'Power2',
+          onComplete: () => resolve()
+        });
       });
-    } else {
-      // Desktop: Hover to flip, click to launch
-      cardBg.on('pointerover', () => {
+    };
+    const flipOut = () => {
+      return new Promise((resolve) => {
+        this.tweens.add({
+          targets: cardContainer,
+          scaleX: 1,
+          duration: 150,
+          ease: 'Back.easeOut',
+          onComplete: () => resolve()
+        });
+      });
+    };
+    const brighten = () => {
+      const brighterColor = utilLightenColor(color, 0.2);
+      const newKey = ensureUnifiedCardBack(this, `mode_card_back_${brighterColor}`, brighterColor);
+      cardBg.setTexture(newKey);
+    };
+    const resetColor = () => {
+      const resetKey = ensureUnifiedCardBack(this, `mode_card_back_${color}`, color);
+      cardBg.setTexture(resetKey);
+    };
+
+    // Uniform click-to-flip behavior on both desktop and mobile to avoid hover bugs
+    hitZone.on('pointerdown', async () => {
         if (!cardContainer.isFlipped) {
           cardContainer.isFlipped = true;
-          
-          // Flip animation: scale X to 0 then back to 1.15
-          this.tweens.add({
-            targets: cardContainer,
-            scaleX: 0,
-            duration: 150,
-            ease: 'Power2',
-            onComplete: () => {
-              // Show text and brighten card
-              cardText.setVisible(true);
-              const brighterColor = this.lightenColor(color, 0.2);
-              
-              cardBg.clear();
-              cardBg.fillStyle(0xffffff, 1);
-              cardBg.fillRoundedRect(-originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight, cornerRadius);
-              cardBg.fillStyle(brighterColor, 1);
-              cardBg.fillRoundedRect(
-                -originalWidth / 2 + borderWidth,
-                -originalHeight / 2 + borderWidth,
-                originalWidth - borderWidth * 2,
-                originalHeight - borderWidth * 2,
-                cornerRadius - 2
-              );
-              this.addCardPattern(cardBg, originalWidth, originalHeight, brighterColor);
-              
-              // Fade in text
-              this.tweens.add({
-                targets: cardText,
-                alpha: 1,
-                duration: 100
-              });
-              
-              // Scale back up with text visible
-              this.tweens.add({
-                targets: cardContainer,
-                scaleX: 1.15,
-                scaleY: 1.15,
-                duration: 150,
-                ease: 'Back.easeOut'
-              });
-            }
-          });
+          await flipIn();
+          cardText.setVisible(true);
+          this.tweens.add({ targets: cardText, alpha: 1, duration: 100 });
+          brighten();
+          await flipOut();
         } else {
-          // Already flipped, just scale up
-          this.tweens.add({
-            targets: cardContainer,
-            scaleX: 1.15,
-            scaleY: 1.15,
-            duration: 200,
-            ease: 'Back.easeOut'
-          });
+          const normalizedMode = mode === 'general' ? 'synonym' : mode;
+          this.registry.set('selectedMode', normalizedMode);
+          this.scene.start('RulesScene');
         }
+    });
+
+    // Gentle hover scale (no flip) for desktop only
+    if (!isMobile) {
+      hitZone.on('pointerover', () => {
+        this.tweens.add({ targets: cardContainer, scaleX: 1.05, scaleY: 1.05, duration: 120, ease: 'Back.easeOut' });
       });
-      
-      cardBg.on('pointerout', () => {
-        if (cardContainer.isFlipped) {
-          cardContainer.isFlipped = false;
-          
-          // Flip back: scale X to 0 then back to 1
-          this.tweens.add({
-            targets: cardContainer,
-            scaleX: 0,
-            duration: 150,
-            ease: 'Power2',
-            onComplete: () => {
-              // Hide text and reset card color
-              this.tweens.add({
-                targets: cardText,
-                alpha: 0,
-                duration: 100,
-                onComplete: () => {
-                  cardText.setVisible(false);
-                }
-              });
-              
-              cardBg.clear();
-              cardBg.fillStyle(0xffffff, 1);
-              cardBg.fillRoundedRect(-originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight, cornerRadius);
-              cardBg.fillStyle(color, 1);
-              cardBg.fillRoundedRect(
-                -originalWidth / 2 + borderWidth,
-                -originalHeight / 2 + borderWidth,
-                originalWidth - borderWidth * 2,
-                originalHeight - borderWidth * 2,
-                cornerRadius - 2
-              );
-              this.addCardPattern(cardBg, originalWidth, originalHeight, color);
-              
-              // Scale back to normal
-              this.tweens.add({
-                targets: cardContainer,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150,
-                ease: 'Back.easeIn'
-              });
-            }
-          });
-        } else {
-          // Not flipped, just scale back down
-          this.tweens.add({
-            targets: cardContainer,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 200,
-            ease: 'Back.easeIn'
-          });
-        }
-      });
-      
-      cardBg.on('pointerdown', () => {
-        // Store selected mode and transition to game
-        this.registry.set('selectedMode', mode);
-        this.scene.start('GameScene');
+      hitZone.on('pointerout', () => {
+        this.tweens.add({ targets: cardContainer, scaleX: 1, scaleY: 1, duration: 120, ease: 'Back.easeIn' });
       });
     }
   }

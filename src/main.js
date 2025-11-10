@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import StartScene from './scenes/StartScene.js';
 import ModeSelectScene from './scenes/ModeSelectScene.js';
 import GameScene from './scenes/GameScene.js';
+import RulesScene from './scenes/RulesScene.js';
 
 // Force landscape on mobile
 const isMobile = window.innerWidth < 768 || window.innerHeight < 768;
@@ -30,7 +31,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [StartScene, ModeSelectScene, GameScene],
+  scene: [StartScene, ModeSelectScene, RulesScene, GameScene],
 };
 
 // Create game instance

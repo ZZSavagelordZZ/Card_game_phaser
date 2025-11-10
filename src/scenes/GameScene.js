@@ -302,9 +302,10 @@ export default class GameScene extends Phaser.Scene {
       
       // Calculate play zone (smaller and centered)
       const playZoneWidth = width * 0.45;
-      const playZoneHeight = height * 0.45;
+      const playZoneHeight = height * 0.40; // reduce to create space for submit + hand
       const centerX = width / 2;
-      const centerY = (topHeight + (height - bottomHeight)) / 2;
+      // Move play zone higher on desktop by shifting centerY upward
+      const centerY = (topHeight + (height - bottomHeight)) / 2 - height * 0.06;
       
       this.playZone = this.add.zone(centerX, centerY, playZoneWidth, playZoneHeight);
       this.playZone.setDepth(100);
@@ -334,7 +335,7 @@ export default class GameScene extends Phaser.Scene {
       this.deckArea.setDepth(500);
       
       // Bottom - Hand area
-      this.handArea = this.add.zone(width / 2, height - bottomHeight / 2, width - leftWidth - rightWidth, bottomHeight * 0.8);
+      this.handArea = this.add.zone(width / 2, height - bottomHeight * 0.35, width - leftWidth - rightWidth, bottomHeight * 0.7);
       this.handArea.setDepth(500);
       
       // Store hand start Y for card creation
@@ -502,13 +503,18 @@ export default class GameScene extends Phaser.Scene {
       buttonX = width / 2;
       buttonY = playZoneY + playZoneHeight / 2 + 25; // Below play zone
     } else {
-      // Desktop: Original position
+      // Desktop: Position just below play zone, clamped above hand area top
       const topHeight = height * 0.15;
       const bottomHeight = height * 0.15;
-      const playZoneHeight = height * 0.45;
-      const centerY = (topHeight + (height - bottomHeight)) / 2;
+      const playZoneHeight = height * 0.40;
+      // Match the play zone's upward shift
+      const centerY = (topHeight + (height - bottomHeight)) / 2 - height * 0.06;
+      const playZoneBottomY = centerY + (playZoneHeight / 2);
+      const desiredY = playZoneBottomY + 30;
+      // handArea exists at this point (created in createUILayout)
+      const handTopY = this.handArea ? (this.handArea.y - this.handArea.height / 2) : (height - bottomHeight);
       buttonX = width / 2;
-      buttonY = centerY + playZoneHeight * 0.35; // Position below play zone center
+      buttonY = Math.min(desiredY, handTopY - 20);
     }
     
     // Button container
@@ -532,7 +538,7 @@ export default class GameScene extends Phaser.Scene {
     buttonText.setOrigin(0.5);
     
     buttonContainer.add([buttonBg, buttonText]);
-    buttonContainer.setDepth(700);
+    buttonContainer.setDepth(2000);
     
     // Make interactive
     buttonBg.setInteractive(
@@ -590,28 +596,28 @@ export default class GameScene extends Phaser.Scene {
   }
 
   generateQuestions() {
-    // Generate 20 general knowledge questions
+    // 20 synonym questions (no numerical questions)
     return [
-      { question: 'What is the capital of France?', answer: 'Paris', wrong: ['London', 'Berlin', 'Madrid', 'Rome'] },
-      { question: 'What is 2 + 2?', answer: '4', wrong: ['3', '5', '6', '7'] },
-      { question: 'What planet is known as the Red Planet?', answer: 'Mars', wrong: ['Venus', 'Jupiter', 'Saturn', 'Mercury'] },
-      { question: 'How many continents are there?', answer: '7', wrong: ['5', '6', '8', '9'] },
-      { question: 'What is the largest ocean?', answer: 'Pacific', wrong: ['Atlantic', 'Indian', 'Arctic', 'Southern'] },
-      { question: 'What is the smallest prime number?', answer: '2', wrong: ['1', '3', '5', '7'] },
-      { question: 'What is the capital of Japan?', answer: 'Tokyo', wrong: ['Osaka', 'Kyoto', 'Seoul', 'Beijing'] },
-      { question: 'How many sides does a triangle have?', answer: '3', wrong: ['2', '4', '5', '6'] },
-      { question: 'What is the chemical symbol for water?', answer: 'H2O', wrong: ['CO2', 'O2', 'NaCl', 'Fe'] },
-      { question: 'What is the largest mammal?', answer: 'Blue Whale', wrong: ['Elephant', 'Giraffe', 'Hippo', 'Rhino'] },
-      { question: 'What is the capital of Australia?', answer: 'Canberra', wrong: ['Sydney', 'Melbourne', 'Perth', 'Brisbane'] },
-      { question: 'How many days are in a week?', answer: '7', wrong: ['5', '6', '8', '10'] },
-      { question: 'What is the fastest land animal?', answer: 'Cheetah', wrong: ['Lion', 'Tiger', 'Leopard', 'Jaguar'] },
-      { question: 'What is the capital of Canada?', answer: 'Ottawa', wrong: ['Toronto', 'Vancouver', 'Montreal', 'Calgary'] },
-      { question: 'How many legs does a spider have?', answer: '8', wrong: ['6', '10', '12', '4'] },
-      { question: 'What is the largest planet?', answer: 'Jupiter', wrong: ['Saturn', 'Neptune', 'Uranus', 'Earth'] },
-      { question: 'What is the capital of Brazil?', answer: 'Brasilia', wrong: ['Rio', 'Sao Paulo', 'Buenos Aires', 'Lima'] },
-      { question: 'How many minutes are in an hour?', answer: '60', wrong: ['30', '45', '90', '100'] },
-      { question: 'What is the smallest country?', answer: 'Vatican', wrong: ['Monaco', 'San Marino', 'Liechtenstein', 'Malta'] },
-      { question: 'What is the capital of Egypt?', answer: 'Cairo', wrong: ['Alexandria', 'Luxor', 'Giza', 'Aswan'] }
+      { question: 'Choose a synonym for Happy', answer: 'Joyful', wrong: ['Sad', 'Angry', 'Bored', 'Tired'] },
+      { question: 'Choose a synonym for Quick', answer: 'Fast', wrong: ['Slow', 'Late', 'Steady', 'Calm'] },
+      { question: 'Choose a synonym for Smart', answer: 'Clever', wrong: ['Dull', 'Lazy', 'Careless', 'Noisy'] },
+      { question: 'Choose a synonym for Big', answer: 'Large', wrong: ['Tiny', 'Minor', 'Little', 'Thin'] },
+      { question: 'Choose a synonym for Brave', answer: 'Courageous', wrong: ['Frightened', 'Shy', 'Quiet', 'Gentle'] },
+      { question: 'Choose a synonym for Silent', answer: 'Quiet', wrong: ['Loud', 'Noisy', 'Harsh', 'Wild'] },
+      { question: 'Choose a synonym for Begin', answer: 'Start', wrong: ['End', 'Stop', 'Pause', 'Close'] },
+      { question: 'Choose a synonym for Finish', answer: 'Complete', wrong: ['Begin', 'Open', 'Break', 'Delay'] },
+      { question: 'Choose a synonym for Strong', answer: 'Powerful', wrong: ['Weak', 'Fragile', 'Soft', 'Light'] },
+      { question: 'Choose a synonym for Build', answer: 'Construct', wrong: ['Destroy', 'Undo', 'Break', 'Reduce'] },
+      { question: 'Choose a synonym for Repair', answer: 'Fix', wrong: ['Damage', 'Worsen', 'Ignore', 'Break'] },
+      { question: 'Choose a synonym for Shout', answer: 'Yell', wrong: ['Whisper', 'Murmur', 'Mutter', 'Sing'] },
+      { question: 'Choose a synonym for Purchase', answer: 'Buy', wrong: ['Sell', 'Lend', 'Borrow', 'Give'] },
+      { question: 'Choose a synonym for Distant', answer: 'Far', wrong: ['Near', 'Next', 'Close', 'Here'] },
+      { question: 'Choose a synonym for Accurate', answer: 'Correct', wrong: ['Wrong', 'False', 'Broken', 'Fake'] },
+      { question: 'Choose a synonym for Assist', answer: 'Help', wrong: ['Hurt', 'Ignore', 'Delay', 'Refuse'] },
+      { question: 'Choose a synonym for Select', answer: 'Choose', wrong: ['Drop', 'Lose', 'Miss', 'Refuse'] },
+      { question: 'Choose a synonym for Calm', answer: 'Peaceful', wrong: ['Wild', 'Loud', 'Angry', 'Fast'] },
+      { question: 'Choose a synonym for Tidy', answer: 'Neat', wrong: ['Messy', 'Dirty', 'Cluttered', 'Greasy'] },
+      { question: 'Choose a synonym for Speak', answer: 'Talk', wrong: ['Sleep', 'Write', 'Walk', 'Drive'] }
     ];
   }
 
@@ -622,30 +628,29 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     
-    // Get next set of 5 questions
-    const startIndex = this.currentQuestionSetIndex * 5;
-    if (startIndex >= this.questions.length) {
-      // Cycle back to beginning
-      this.currentQuestionSetIndex = 0;
-      this.loadNextQuestionSet();
-      return;
-    }
-    
-    // Get 5 questions for this set
-    this.currentQuestionSet = [];
-    for (let i = 0; i < 5 && (startIndex + i) < this.questions.length; i++) {
-      this.currentQuestionSet.push(this.questions[startIndex + i]);
-    }
-    
-    // If we don't have 5 questions left, cycle back
-    if (this.currentQuestionSet.length < 5) {
-      // Fill from beginning
-      let fillIndex = 0;
-      while (this.currentQuestionSet.length < 5) {
-        this.currentQuestionSet.push(this.questions[fillIndex % this.questions.length]);
-        fillIndex++;
+    // Build randomized sets of 5 if not already built
+    if (!this.shuffledQuestionSets) {
+      const shuffled = Phaser.Utils.Array.Shuffle(this.questions.slice());
+      this.shuffledQuestionSets = [];
+      for (let i = 0; i < shuffled.length; i += 5) {
+        const set = shuffled.slice(i, i + 5);
+        // If last chunk smaller, wrap from start to make 5
+        while (set.length < 5) {
+          set.push(shuffled[(set.length) % shuffled.length]);
+        }
+        // Randomize order within set
+        this.shuffledQuestionSets.push(Phaser.Utils.Array.Shuffle(set));
       }
+      // Randomize which set order is presented
+      this.shuffledQuestionSets = Phaser.Utils.Array.Shuffle(this.shuffledQuestionSets);
+      this.currentQuestionSetIndex = 0;
     }
+
+    // Fetch current set (wrap around)
+    const setIndex = this.currentQuestionSetIndex % this.shuffledQuestionSets.length;
+    this.currentQuestionSet = this.shuffledQuestionSets[setIndex];
+    // Re-shuffle order within set each time it is loaded
+    this.currentQuestionSet = Phaser.Utils.Array.Shuffle(this.currentQuestionSet.slice());
     
     // Reset set progress
     this.currentQuestionIndex = 0;
@@ -1054,8 +1059,13 @@ export default class GameScene extends Phaser.Scene {
     const cardImage = this.add.image(0, 0, textureKey);
     cardImage.setScale(cardScale);
     
-    // Text on card
-    const fontSize = isMobile ? '28px' : '36px';
+    // Text on card - make operand symbols slightly larger
+    let fontSize;
+    if (type === 'operand') {
+      fontSize = isMobile ? '34px' : '44px';
+    } else {
+      fontSize = isMobile ? '28px' : '36px';
+    }
     const text = this.add.text(0, 0, displayText, {
       fontSize: fontSize,
       fontFamily: '"Comic Neue", cursive',
@@ -1142,7 +1152,7 @@ export default class GameScene extends Phaser.Scene {
     
     const cardImage = this.add.image(0, 0, textureKey);
     cardImage.setScale(cardScale);
-    const fontSize = isMobile ? '28px' : '36px';
+    const fontSize = (type === 'operand') ? (isMobile ? '34px' : '44px') : (isMobile ? '28px' : '36px');
     const text = this.add.text(0, 0, displayText, {
       fontSize: fontSize,
       fontFamily: '"Comic Neue", cursive',
@@ -1572,19 +1582,17 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showFeedback(isCorrect) {
-    const { width, height } = this.scale;
-    const color = isCorrect ? 0x00ff00 : 0xff0000;
-    const alpha = 0.3;
-    
-    this.feedbackOverlay.setFillStyle(color, alpha);
-    this.feedbackOverlay.setAlpha(1);
-    
-    this.tweens.add({
-      targets: this.feedbackOverlay,
-      alpha: 0,
-      duration: 500,
-      delay: 300
-    });
+    // Full-screen camera effects for clearer feedback
+    const cam = this.cameras.main;
+
+    if (isCorrect) {
+      // Subtle green flash
+      cam.flash(220, 60, 220, 60); // r,g,b components scaled 0-255
+    } else {
+      // Red flash + gentle shake for wrong answer
+      cam.flash(220, 220, 60, 60);
+      cam.shake(180, 0.01);
+    }
   }
 
   addScore(points) {
@@ -1602,15 +1610,24 @@ export default class GameScene extends Phaser.Scene {
     const topHeight = isMobile ? height * 0.15 : height * 0.15;
     
     if (isMobile) {
-      // Mobile: Target/question in top bar, left side (centered in its zone)
-      this.topDisplayText = this.add.text(width * 0.15, topHeight / 2, text, {
-        fontSize: '14px',
+      // Mobile:
+      // - Maths: target remains in left of top bar
+      // - Synonym: question moved to operands area position (same as maths operands)
+      const isGeneral = this.selectedMode === 'synonym';
+      const operandY = topHeight + height * 0.02;
+      const x = isGeneral ? width * 0.5 : width * 0.15;
+      const y = isGeneral ? operandY : topHeight / 2;
+      const wrapWidth = isGeneral ? width * 0.9 : width * 0.2;
+      const fontSize = isGeneral ? '20px' : '14px';
+
+      this.topDisplayText = this.add.text(x, y, text, {
+        fontSize: fontSize,
         fontFamily: '"Comic Neue", cursive',
         fontWeight: 'bold',
         color: '#ffffff',
         stroke: '#000000',
         strokeThickness: 3,
-        wordWrap: { width: width * 0.2 },
+        wordWrap: { width: wrapWidth },
         align: 'center'
       });
       this.topDisplayText.setOrigin(0.5);
